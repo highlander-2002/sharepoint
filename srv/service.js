@@ -1,20 +1,20 @@
 const cds = require('@sap/cds');
 const axios = require('axios');
-const fs = require('fs');
-const { request } = require('http');
-const path = require('path');
- 
+const sendErrorEmail = require('./handlers/sendErrorEmail'); // Ensure this file exists and is correctly named
+const sendSuccessEmail = require('./handlers/sendSuccessEmail');
 module.exports = cds.service.impl(async function () {
     this.on('uploadDocument', async (req) => {
         try {
-            const { PSnumber, Source, DocumentName, File, FileType } = req.data
-            console.log(req.data)
- 
+            const { PSnumber, Source, DocumentName, File, FileType } = req.data;
+            console.log('📦 Incoming request data:', req.data);
+
             if (!File) {
-                req.error(400, 'File content is missing');
+                const msg = 'File content is missing';
+                await sendErrorEmail(`Upload failed: ${msg}`);
+                req.error(400, msg);
                 return;
             }
- 
+
             // Step 1: Get OAuth Token
             const tokenResponse = await axios.post(
                 'https://dms-ivizonapitest.azurewebsites.net/TOKEN',
@@ -29,27 +29,23 @@ module.exports = cds.service.impl(async function () {
                     }
                 }
             );
- 
+
             const token = tokenResponse.data.access_token;
 
-            const isoString = new Date();
-            const date = new Date(isoString);
- 
-            const formatted = date.toISOString().replace(/T/, '_').replace(/:/g, '-').split('.')[0];
- 
-           
- 
-            // Step 3: Upload Document
+            // Format timestamp
+            const formatted = new Date().toISOString().replace(/T/, '_').replace(/:/g, '-').split('.')[0];
+
+            // Step 2: Upload Document
             const uploadPayload = {
-                Source: Source,
+                Source,
                 PSNO: PSnumber,
-                DocumentName: DocumentName,
-                File: File,
-                FileType: FileType,
-                Year:formatted
+                DocumentName,
+                File,
+                FileType,
+                Year: formatted
             };
-            console.log(uploadPayload)
- 
+            console.log('📤 Upload payload:', uploadPayload);
+
             const uploadResponse = await axios.post(
                 'https://dms-ivizonapitest.azurewebsites.net/api/UploadDocument',
                 uploadPayload,
@@ -60,15 +56,32 @@ module.exports = cds.service.impl(async function () {
                     }
                 }
             );
-            console.log(uploadResponse.data)
- 
-            return uploadResponse.data;
- 
+
+            const responseData = uploadResponse.data;
+            console.log('📥 Upload response:', responseData);
+
+            if (responseData === 'Success') {
+                const successMessage = `✅ Document "${DocumentName}" uploaded successfully.\n\nDetails:\n${JSON.stringify(responseData, null, 2)}`;
+                await sendSuccessEmail(successMessage);
+            } else {
+                const errorMessage = `⚠️ Document "${DocumentName}" upload returned a non-success response.\n\nResponse:\n${JSON.stringify(responseData, null, 2)}`;
+                await sendErrorEmail(errorMessage);
+            }
+
+
+            // Optional: handle known error messages
+            if (responseData.value && responseData.value.includes('Invalid')) {
+                req.error(400, responseData.value);
+                return;
+            }
+
+            return responseData;
+
         } catch (error) {
-            console.error('Error uploading document:', error.message);
+            console.error('❌ Exception during upload:', error.message);
+            await sendErrorEmail(`Exception during upload: ${error.message}`);
             req.error(500, 'Document upload failed');
         }
     });
 });
- 
- 
+
