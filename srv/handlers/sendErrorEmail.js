@@ -14,7 +14,7 @@ async function sendErrorEmail(errorMessage) {
 
     const mailOptions = {
       from: 'manoharkarthk@gmail.com',
-      to: 'krishnam1413@gmail.com,sharvanireddy02@gmail.com',          // Replace with recipient
+      to: 'krishnam1413@gmail.com',          // Replace with recipient
       subject: 'Document Upload Error',
       text: `An error occurred:\n\n${errorMessage}`
     };

@@ -11,7 +11,7 @@ module.exports = async function sendSuccessEmail(message) {
 
   const mailOptions = {
     from: 'manoharkarthk@gmail.com',
-    to: 'krishnam1413@gmail.com,sharvanireddy02@gmail.com',
+    to: 'krishnam1413@gmail.com',
     subject: '✅ Document Upload Successful',
     text: 'The File is uploaded Successfully'
   };
