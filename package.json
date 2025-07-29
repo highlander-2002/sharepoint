@@ -11,7 +11,7 @@
     "@sap/cds-sqlite": "^1.24.1",
     "@sap/xssec": "^4",
     "express": "^4",
-    "nodemailer": "^7.0.3"
+    "nodemailer": "^7.0.5"
   },
   "devDependencies": {
     "@cap-js/cds-types": "^0.10.0",
@@ -19,14 +19,16 @@
     "@sap/cds-dk": "^8"
   },
   "scripts": {
-    "start": "cds-serve"
+    "start": "cds run server.js"
   },
   "cds": {
     "requires": {
       "auth": "mocked",
       "db": {
         "kind": "sqlite",
-        "model": ["db"],
+        "model": [
+          "db"
+        ],
         "credentials": {
           "database": "db.sqlite"
         }
@@ -37,5 +39,3 @@
     }
   }
 }
- 
- 
